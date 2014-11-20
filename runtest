@@ -1,0 +1,186 @@
+#!/bin/sh
+
+set -eux
+
+if [ $# -lt 1 ]; then
+	method=intree
+else
+	method=$1
+fi
+
+
+function _cd() {
+	dir=$1
+	case $method in
+		intree)
+			cd $dir
+			SRCDIR=.
+			;;
+		make_f)
+			SRCDIR=$PWD/$dir
+			BUILDDIR=$PWD/build_${dir}
+			rm -rf "$BUILDDIR"
+			mkdir "$BUILDDIR"
+			cd "$BUILDDIR"
+			;;
+		vpath)
+			SRCDIR=$PWD/$dir
+			BUILDDIR=$PWD/build_${dir}
+			rm -rf "$BUILDDIR"
+			mkdir "$BUILDDIR"
+			cd "$BUILDDIR"
+			ln -s $SRCDIR/Makefile $BUILDDIR/Makefile
+			;;
+	esac
+}
+
+function _make() {
+	case $method in
+		intree)
+			make "$@"
+			;;
+		make_f)
+			make -f $SRCDIR/Makefile "$@"
+			;;
+		vpath)
+			make USE_VPATH=$SRCDIR "$@"
+			;;
+	esac
+}
+
+function _cleanup() {
+	case $method in
+		intree)
+			;;
+		make_f | vpath)
+			cd ..
+			rm -rf "$BUILDDIR"
+			;;
+	esac
+}
+
+
+(
+	_cd testext
+
+	_make clean
+	test ! -f testext.o
+	test ! -f testext.so
+
+	_make
+	test -f testext.o
+	test -f testext.so
+
+	_make uninstall
+	test ! -f $(pg_config --pkglibdir)/testext.so
+	test ! -f $(pg_config --docdir)/extension/README
+	test ! -f $(pg_config --sharedir)/extension/testext--0.sql
+	test ! -f $(pg_config --sharedir)/extension/testext--unpackaged.sql
+	test ! -f $(pg_config --sharedir)/extension/testext.control
+	test ! -f $(pg_config --sharedir)/tsearch_data/testext.rules
+
+	_make install
+	test -f $(pg_config --pkglibdir)/testext.so
+	test -f $(pg_config --docdir)/extension/README
+	test -f $(pg_config --sharedir)/extension/testext--0.sql
+	test -f $(pg_config --sharedir)/extension/testext--unpackaged.sql
+	test -f $(pg_config --sharedir)/extension/testext.control
+	test -f $(pg_config --sharedir)/tsearch_data/testext.rules
+
+	_make installcheck
+
+	_make uninstall
+	test ! -f $(pg_config --pkglibdir)/testext.so
+	test ! -f $(pg_config --docdir)/extension/README
+	test ! -f $(pg_config --sharedir)/extension/testext--0.sql
+	test ! -f $(pg_config --sharedir)/extension/testext--unpackaged.sql
+	test ! -f $(pg_config --sharedir)/extension/testext.control
+	test ! -f $(pg_config --sharedir)/tsearch_data/testext.rules
+
+	_make clean
+	test ! -f testext.o
+	test ! -f testext.so
+
+	_cleanup
+)
+
+(
+	_cd testmod
+
+	_make clean
+	test ! -f test.sql
+	test ! -f test2.c
+	test ! -f test1.o
+	test ! -f test2.o
+	test ! -f test1.so
+	test ! -f test2.so
+
+	_make
+	test -f test.sql
+	test -f test2.c
+	test -f test1.o
+	test -f test2.o
+	test -f test1.so
+	test -f test2.so
+
+	_make uninstall
+	test ! -f $(pg_config --pkglibdir)/test1.so
+	test ! -f $(pg_config --pkglibdir)/test2.so
+	test ! -f $(pg_config --sharedir)/contrib/test.sql
+
+	_make install
+	test -f $(pg_config --pkglibdir)/test1.so
+	test -f $(pg_config --pkglibdir)/test2.so
+	test -f $(pg_config --sharedir)/contrib/test.sql
+
+	_make uninstall
+	test ! -f $(pg_config --pkglibdir)/test1.so
+	test ! -f $(pg_config --pkglibdir)/test2.so
+	test ! -f $(pg_config --sharedir)/contrib/test.sql
+
+	_make clean
+	test ! -f test.sql
+	test ! -f test2.c
+	test ! -f test1.o
+	test ! -f test2.o
+	test ! -f test1.so
+	test ! -f test2.so
+
+	_cleanup
+)
+
+(
+	_cd testprog
+
+	_make clean
+	test ! -f script1
+	test ! -f testprog.o
+	test ! -f testprog
+
+	_make
+	test -f script1
+	test -f testprog.o
+	test -f testprog
+
+	_make uninstall
+	test ! -f $(pg_config --bindir)/script1
+	test ! -f $(pg_config --bindir)/script2
+	test ! -f $(pg_config --bindir)/testprog
+
+	_make install
+	test -x $(pg_config --bindir)/script1
+	test -x $(pg_config --bindir)/script2
+	test -x $(pg_config --bindir)/testprog
+
+	_make uninstall
+	test ! -f $(pg_config --bindir)/script1
+	test ! -f $(pg_config --bindir)/script2
+	test ! -f $(pg_config --bindir)/testprog
+
+	_make clean
+	test ! -f script1
+	test ! -f testprog.o
+	test ! -f testprog
+
+	_cleanup
+)

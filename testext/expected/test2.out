@@ -1,0 +1,6 @@
+SELECT addone(5);
+ addone 
+--------
+      6
+(1 row)
+

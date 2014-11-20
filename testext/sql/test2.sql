@@ -1,0 +1,2 @@
+SELECT addone(5);
+
