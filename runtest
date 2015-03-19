@@ -43,7 +43,7 @@ function _make() {
 			make -f $SRCDIR/Makefile "$@"
 			;;
 		vpath)
-			make USE_VPATH=$SRCDIR "$@"
+			make VPATH=$SRCDIR "$@"
 			;;
 	esac
 }
