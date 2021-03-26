@@ -1,0 +1,4 @@
+#   REGRESS_OPTS -- additional switches to pass to pg_regress
+#   PG_CPPFLAGS -- will be added to CPPFLAGS
+#   PG_LIBS -- will be added to PROGRAM link line
+#   SHLIB_LINK -- will be added to MODULE_big link line
